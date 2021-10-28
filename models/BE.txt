@@ -1,0 +1,19 @@
+Event - Tasks.Created
+Producer - Tasks
+Consumer - Accounting
+
+Event - Tasks.Asssigned
+Producer - Tasks
+Consumer - Accounting
+
+Event - Tasks.Completed
+Producer - Tasks
+Consumer - Accounting
+
+Event - Timer
+Producer -
+Consumer - Accounting
+
+Event - Report.Calculated
+Producer - Accounting
+Consumer - Notifications

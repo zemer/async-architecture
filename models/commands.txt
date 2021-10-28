@@ -1,0 +1,69 @@
+Таск-трекер
+
+4. Новые таски может создавать кто угодно (администратор, начальник, разработчик, менеджер и любая другая роль). У задачи должны быть описание, статус (выполнена или нет) и попуг, на которого заассайнена задача.
+
+Actor - Account
+Command - Create task
+Data - Task
+Event - Tasks.Created
+
+5. Менеджеры или администраторы должны иметь кнопку «заассайнить задачи», которая возьмёт все открытые задачи и рандомно заассайнит каждую на любого из сотрудников. Не успел закрыть задачу до реассайна — сорян, делай следующую.
+
+Actor - Managers or Admins
+Command - Asssign tasks
+Data - Tasks, Accounts
+Event - Tasks.Asssigned
+
+6. Каждый сотрудник должен иметь возможность отметить задачу выполненной.
+
+Actor - Account
+Command - Complete task
+Data - Task
+Event - Tasks.Completed
+
+Аккаунтинг: кто сколько денег заработал
+
+цены на задачу определяется единоразово, в момент появления в системе (можно с минимальной задержкой)
+
+Actor - Tasks.Created event
+Command - Rate task
+Data - Task
+Event - Tasks.Rated
+
+деньги списываются сразу после ассайна на сотрудника, а начисляются после выполнения задачи.
+
+Actor - Tasks.Asssigned event
+Command - Debit
+Data - Task, Account
+Event - Bill.Debit
+
+Actor - Tasks.Completed event
+Command - Credit
+Data - Task, Account
+Event - Bill.Credit
+
+a. считать сколько денег сотрудник получил за рабочий день
+
+Actor - Timer event
+Command - Calculate
+Data - Tasks, Accounts
+Event - Report.Calculated
+
+b. отправлять на почту сумму выплаты.
+
+Actor - Report.Calculated event
+Command - Send notification
+Data - Bill, Account
+Event - Notification.Sended
+
+После выплаты баланса (в конце дня) он должен обнуляться, и в аудитлоге всех операций аккаунтинга должно быть отображено, что была выплачена сумма.
+
+Actor - Report.Calculated event
+Command - Reset
+Data - Bill, Account
+Event - Bill.Reset
+
+Actor - Report.Calculated event
+Command - Create audit record
+Data - Bill, Account
+Event - Audit.Created
