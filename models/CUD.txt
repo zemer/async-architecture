@@ -1,0 +1,19 @@
+Event - User CUD
+Producer - Auth
+Cosumer - Tasks, Accounting, Analytics
+Data - ID, Name, Role, Deleted, DateCreated, DateCompleted
+
+Event - Task CUD
+Producer - Tasks
+Cosumer - Accounting, Analitics
+Data - ID, Description, Status, Cost, Responsible
+
+Event - Bill CUD
+Producer - Accounting
+Cosumer - Analitics
+Data - ID, UserId, Balance
+
+Event - Audit CUD
+Producer - Accounting
+Cosumer - Analitics
+Data - ID, UserId, Fee
