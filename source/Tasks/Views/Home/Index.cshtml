@@ -1,0 +1,46 @@
+﻿@model IEnumerable<Tasks.Context.Task>
+
+@{
+    ViewData["Title"] = "My tasks";
+}
+
+<h1>My tasks</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.PublicId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Description)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Completed)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PublicId)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Description)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Completed)
+                </td>
+                <td>
+                    @if (!item.Completed)
+                    {
+                        @Html.ActionLink("Complete", "Complete", "Home", item);
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
