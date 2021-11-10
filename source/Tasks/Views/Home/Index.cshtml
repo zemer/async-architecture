@@ -16,6 +16,9 @@
                 @Html.DisplayNameFor(model => model.Description)
             </th>
             <th>
+                @Html.DisplayNameFor(model => model.JiraId)
+            </th>
+            <th>
                 @Html.DisplayNameFor(model => model.Completed)
             </th>
             <th></th>
@@ -24,23 +27,26 @@
     <tbody>
         @foreach (var item in Model)
         {
-            <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.PublicId)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Description)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Completed)
-                </td>
-                <td>
-                    @if (!item.Completed)
-                    {
-                        @Html.ActionLink("Complete", "Complete", "Home", item);
-                    }
-                </td>
-            </tr>
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.PublicId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Description)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.JiraId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Completed)
+            </td>
+            <td>
+                @if (!item.Completed)
+                {
+                    @Html.ActionLink("Complete", "Complete", "Home", item);
+                }
+            </td>
+        </tr>
         }
     </tbody>
 </table>

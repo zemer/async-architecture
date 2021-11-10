@@ -23,7 +23,8 @@ namespace Tasks.Controllers
         // GET: Tasks
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Tasks.Include(t => t.Account).ToListAsync());
+            return View(await _context.Tasks.Include(t => t.Account)
+                                      .ToListAsync());
         }
 
         // GET: Tasks/Details/5
@@ -35,7 +36,7 @@ namespace Tasks.Controllers
             }
 
             var task = await _context.Tasks
-                .FirstOrDefaultAsync(m => m.TaskId == id);
+                                     .FirstOrDefaultAsync(m => m.TaskId == id);
             if (task == null)
             {
                 return NotFound();
@@ -55,15 +56,16 @@ namespace Tasks.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Description")] Task task)
+        public async Task<IActionResult> Create([Bind("Description,JiraId")] Task task)
         {
             if (ModelState.IsValid)
             {
-                task.PublicId = Guid.NewGuid().ToString();
+                task.PublicId = Guid.NewGuid()
+                                    .ToString();
                 _context.Add(task);
                 await _context.SaveChangesAsync();
 
-                await _messageBrokerProducer.Produce("tasks-stream", new { task.PublicId, task.Description });
+                await _messageBrokerProducer.Produce("tasks-stream", new { task.PublicId, task.Description, task.JiraId });
 
                 await AssignTask(task);
 
@@ -75,7 +77,8 @@ namespace Tasks.Controllers
 
         public async Task<IActionResult> Assign()
         {
-            var tasks = await _context.Tasks.Where(t => !t.Completed).ToArrayAsync();
+            var tasks = await _context.Tasks.Where(t => !t.Completed)
+                                      .ToArrayAsync();
 
             foreach (var task in tasks)
             {
@@ -88,10 +91,10 @@ namespace Tasks.Controllers
         private async System.Threading.Tasks.Task AssignTask(Task task)
         {
             var responsible = await _context.Accounts
-                .Where(a => a.Role != "Administrator" && a.Role != "Manager")
-                .OrderBy(a => Guid.NewGuid())
-                .Take(1)
-                .FirstOrDefaultAsync();
+                                            .Where(a => a.Role != "Administrator" && a.Role != "Manager")
+                                            .OrderBy(a => Guid.NewGuid())
+                                            .Take(1)
+                                            .FirstOrDefaultAsync();
 
             if (responsible != null)
             {
@@ -124,7 +127,7 @@ namespace Tasks.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TaskId,Description")] Task task)
+        public async Task<IActionResult> Edit(int id, [Bind("TaskId,Description,JiraId")] Task task)
         {
             if (id != task.TaskId)
             {
@@ -138,7 +141,8 @@ namespace Tasks.Controllers
                     _context.Update(task);
                     await _context.SaveChangesAsync();
 
-                    await _messageBrokerProducer.Produce("tasks-stream", new { task.TaskId, task.Description, task.Completed, task.AccountId });
+                    await _messageBrokerProducer.Produce("tasks-stream",
+                        new { task.TaskId, task.Description, task.JiraId, task.Completed, task.AccountId });
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -167,7 +171,7 @@ namespace Tasks.Controllers
             }
 
             var task = await _context.Tasks
-                .FirstOrDefaultAsync(m => m.TaskId == id);
+                                     .FirstOrDefaultAsync(m => m.TaskId == id);
             if (task == null)
             {
                 return NotFound();

@@ -22,9 +22,9 @@ namespace Tasks.Context
             modelBuilder.Entity<Task>(entity =>
             {
                 entity.HasOne(d => d.Account)
-                    .WithMany(p => p.Tasks)
-                    .HasForeignKey(d => d.AccountId)
-                    .HasConstraintName("FK_Task_Account");
+                      .WithMany(p => p.Tasks)
+                      .HasForeignKey(d => d.AccountId)
+                      .HasConstraintName("FK_Task_Account");
             });
         }
     }
@@ -35,7 +35,11 @@ namespace Tasks.Context
 
         [StringLength(450)] public string PublicId { get; set; }
 
+        [Required]
+        [RegularExpression(@"^[^\[\]]+$", ErrorMessage = "Description must not contain [ or ]")]
         public string Description { get; set; }
+
+        public string JiraId { get; set; }
 
         public bool Completed { get; set; }
 
