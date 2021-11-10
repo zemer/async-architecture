@@ -19,7 +19,7 @@
                 @Html.DisplayNameFor(model => model.JiraId)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Completed)
+                Millet in a bowl
             </th>
             <th></th>
         </tr>
@@ -43,7 +43,7 @@
             <td>
                 @if (!item.Completed)
                 {
-                    @Html.ActionLink("Complete", "Complete", "Home", item);
+                    @Html.ActionLink("Put millet in a bowl", "Complete", "Home", item);
                 }
             </td>
         </tr>

@@ -13,7 +13,7 @@
 @if (User.IsInRole("Manager") || User.IsInRole("Administrator"))
 {
     <p>
-        <a asp-action="Assign">Assign</a>
+        <a asp-action="Assign">Put a bird in a cage</a>
     </p>
 }
 
@@ -30,10 +30,10 @@
                 @Html.DisplayNameFor(model => model.JiraId)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Account)
+                Bird in a cage
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Completed)
+                Millet in a bowl
             </th>
             <th></th>
         </tr>
