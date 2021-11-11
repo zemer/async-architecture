@@ -26,7 +26,7 @@ namespace Tasks.MessageBroker
 
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-            _channel.QueueDeclare("auth-stream",
+            _channel.QueueDeclare("accounts-stream",
                 false,
                 false,
                 false,
@@ -34,7 +34,7 @@ namespace Tasks.MessageBroker
 
             var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += OnReceived;
-            _channel.BasicConsume("auth-stream",
+            _channel.BasicConsume("accounts-stream",
                 true,
                 consumer);
         }

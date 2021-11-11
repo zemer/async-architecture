@@ -1,4 +1,5 @@
 using Common.MessageBroker;
+using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -25,12 +26,13 @@ namespace Tasks
             services.AddDbContext<Context.DataContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options => { options.LoginPath = "/Login"; });
+                    .AddCookie(options => { options.LoginPath = "/Login"; });
 
             services.AddControllersWithViews();
 
             services.AddSingleton<IMessageBrokerConsumer, Consumer>(x => new Consumer(x));
             services.AddScoped<IMessageBrokerProducer, Producer>();
+            services.AddScoped<ISchemaRegistry, SchemaRegistry>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

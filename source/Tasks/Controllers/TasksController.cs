@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Common.MessageBroker;
+using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Tasks.Context;
@@ -13,11 +14,13 @@ namespace Tasks.Controllers
     {
         private readonly DataContext _context;
         private readonly IMessageBrokerProducer _messageBrokerProducer;
+        private readonly ISchemaRegistry _schemaRegistry;
 
-        public TasksController(DataContext context, IMessageBrokerProducer messageBrokerProducer)
+        public TasksController(DataContext context, IMessageBrokerProducer messageBrokerProducer, ISchemaRegistry schemaRegistry)
         {
             _context = context;
             _messageBrokerProducer = messageBrokerProducer;
+            _schemaRegistry = schemaRegistry;
         }
 
         // GET: Tasks
@@ -65,7 +68,26 @@ namespace Tasks.Controllers
                 _context.Add(task);
                 await _context.SaveChangesAsync();
 
-                await _messageBrokerProducer.Produce("tasks-stream", new { task.PublicId, task.Description, task.JiraId });
+                var data = new
+                {
+                    eventId = Guid.NewGuid()
+                                  .ToString(),
+                    eventVersion = 1,
+                    eventName = "Tasks.Stream",
+                    eventTime = DateTimeOffset.Now.ToString(),
+                    producer = "Tasks",
+                    data = new
+                    {
+                        taskId = task.PublicId,
+                        description = task.Description,
+                        jiraId = task.JiraId
+                    }
+                };
+
+                if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Stream.V1))
+                {
+                    await _messageBrokerProducer.Produce("tasks-stream", data);
+                }
 
                 await AssignTask(task);
 
@@ -101,7 +123,25 @@ namespace Tasks.Controllers
                 task.Account = responsible;
                 await _context.SaveChangesAsync();
 
-                await _messageBrokerProducer.Produce("tasks-assigned", new { task.PublicId });
+                var data = new
+                {
+                    eventId = Guid.NewGuid()
+                                  .ToString(),
+                    eventVersion = 1,
+                    eventName = "Tasks.Assigned",
+                    eventTime = DateTimeOffset.Now.ToString(),
+                    producer = "Tasks",
+                    data = new
+                    {
+                        taskId = task.PublicId,
+                        accountId = task.Account?.PublicId
+                    }
+                };
+
+                if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Assigned.V1))
+                {
+                    await _messageBrokerProducer.Produce("tasks-assigned", data);
+                }
             }
         }
 
@@ -141,8 +181,26 @@ namespace Tasks.Controllers
                     _context.Update(task);
                     await _context.SaveChangesAsync();
 
-                    await _messageBrokerProducer.Produce("tasks-stream",
-                        new { task.TaskId, task.Description, task.JiraId, task.Completed, task.AccountId });
+                    var data = new
+                    {
+                        eventId = Guid.NewGuid()
+                                      .ToString(),
+                        eventVersion = 1,
+                        eventName = "Tasks.Stream",
+                        eventTime = DateTimeOffset.Now.ToString(),
+                        producer = "Tasks",
+                        data = new
+                        {
+                            taskId = task.PublicId,
+                            description = task.Description,
+                            jiraId = task.JiraId
+                        }
+                    };
+
+                    if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Stream.V1))
+                    {
+                        await _messageBrokerProducer.Produce("tasks-stream", data);
+                    }
                 }
                 catch (DbUpdateConcurrencyException)
                 {

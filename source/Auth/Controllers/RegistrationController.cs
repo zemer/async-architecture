@@ -1,7 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Auth.Context;
 using Auth.Models;
 using Common.MessageBroker;
+using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,12 +14,15 @@ namespace Auth.Controllers
         private readonly DataContext _context;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMessageBrokerProducer _messageBrokerProducer;
+        private readonly ISchemaRegistry _schemaRegistry;
 
-        public RegistrationController(DataContext context, UserManager<AppUser> userManager, IMessageBrokerProducer messageBrokerProducer)
+        public RegistrationController(DataContext context, UserManager<AppUser> userManager, IMessageBrokerProducer messageBrokerProducer,
+            ISchemaRegistry schemaRegistry)
         {
             _context = context;
             _userManager = userManager;
             _messageBrokerProducer = messageBrokerProducer;
+            _schemaRegistry = schemaRegistry;
         }
 
         public IActionResult Index()
@@ -43,8 +48,27 @@ namespace Auth.Controllers
 
             if (result.Succeeded)
             {
-                await _messageBrokerProducer.Produce("auth-stream",
-                    new { PublicId = user.Id, Username = user.UserName, Email = user.Email, Role = user.Role?.Name });
+                var data = new
+                {
+                    eventId = Guid.NewGuid()
+                                  .ToString(),
+                    eventVersion = 1,
+                    eventName = "Accounts.Stream",
+                    eventTime = DateTimeOffset.Now.ToString(),
+                    producer = "Accounts",
+                    data = new
+                    {
+                        accountId = user.Id,
+                        username = user.UserName,
+                        email = user.Email,
+                        role = user.Role?.Name
+                    }
+                };
+
+                if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Accounts.Stream.V1))
+                {
+                    await _messageBrokerProducer.Produce("accounts-stream", data);
+                }
 
                 return RedirectToAction("Index", "Home");
             }

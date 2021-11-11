@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Auth.Models;
 using Auth.Security;
 using Common.MessageBroker;
+using Common.SchemaRegistry;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth
@@ -26,21 +27,22 @@ namespace Auth
             services.AddDbContext<DataContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddIdentityCore<AppUser>(options =>
-                {
-                    options.Password.RequireDigit = false;
-                    options.Password.RequireLowercase = false;
-                    options.Password.RequireNonAlphanumeric = false;
-                    options.Password.RequireUppercase = false;
-                    options.Password.RequiredLength = 1;
-                })
-                .AddRoles<AppRole>()
-                .AddEntityFrameworkStores<DataContext>();
+                    {
+                        options.Password.RequireDigit = false;
+                        options.Password.RequireLowercase = false;
+                        options.Password.RequireNonAlphanumeric = false;
+                        options.Password.RequireUppercase = false;
+                        options.Password.RequiredLength = 1;
+                    })
+                    .AddRoles<AppRole>()
+                    .AddEntityFrameworkStores<DataContext>();
 
             services.AddControllersWithViews()
-                .AddRazorRuntimeCompilation();
+                    .AddRazorRuntimeCompilation();
 
             services.AddScoped<IJwtGenerator, JwtGenerator>();
             services.AddScoped<IMessageBrokerProducer, Producer>();
+            services.AddScoped<ISchemaRegistry, SchemaRegistry>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
