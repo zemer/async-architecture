@@ -1,3 +1,5 @@
+using Accounting.Billing;
+using Accounting.MessageBroker;
 using Common.MessageBroker;
 using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -7,9 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Tasks.MessageBroker;
 
-namespace Tasks
+namespace Accounting
 {
     public class Startup
     {
@@ -23,7 +24,8 @@ namespace Tasks
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<Context.DataContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContext<Context.DataContext>(opt =>
+                SqlServerDbContextOptionsExtensions.UseSqlServer(opt, Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                     .AddCookie(options => { options.LoginPath = "/Login"; });
@@ -33,7 +35,10 @@ namespace Tasks
             var schemaRegistry = new SchemaRegistry();
             services.AddSingleton<ISchemaRegistry>(schemaRegistry);
             services.AddSingleton<IMessageBrokerConsumer, Consumer>(x => new Consumer(x, schemaRegistry));
+            services.AddSingleton<ICostCalculator, CostCalculator>();
+
             services.AddScoped<IMessageBrokerProducer, Producer>();
+            services.AddScoped<IBillService, BillService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -7,29 +7,23 @@ namespace Common.MessageBroker
 {
     public interface IMessageBrokerProducer
     {
-        Task Produce<T>(string queue, T data);
+        Task Produce<T>(string exchange, T data);
     }
 
     public class Producer : IMessageBrokerProducer
     {
-        public async Task Produce<T>(string queue, T data)
+        public async Task Produce<T>(string exchange, T data)
         {
             var factory = new ConnectionFactory() { HostName = "localhost" };
             using var connection = factory.CreateConnection();
             using var channel = connection.CreateModel();
-            channel.QueueDeclare(queue,
-                false,
-                false,
-                false,
-                null);
+
+            channel.ExchangeDeclare(exchange, "direct");
 
             var message = JsonConvert.SerializeObject(data);
             var body = Encoding.UTF8.GetBytes(message);
 
-            channel.BasicPublish("",
-                queue,
-                null,
-                body);
+            channel.BasicPublish(exchange, "", null, body);
         }
     }
 }

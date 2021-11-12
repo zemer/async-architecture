@@ -10,6 +10,8 @@ namespace Common.SchemaRegistry
     public interface ISchemaRegistry
     {
         bool Validate(object data, string schema);
+
+        bool Validate(string message, string schema);
     }
 
     public class SchemaRegistry : ISchemaRegistry
@@ -30,6 +32,20 @@ namespace Common.SchemaRegistry
             if (SchemaMap.TryGetValue(schema, out var jSchema))
             {
                 var message = JsonConvert.SerializeObject(data);
+                var jData = JObject.Parse(message);
+
+                var result = jData.IsValid(jSchema, out IList<string> messages);
+
+                return result;
+            }
+
+            return false;
+        }
+
+        public bool Validate(string message, string schema)
+        {
+            if (SchemaMap.TryGetValue(schema, out var jSchema))
+            {
                 var jData = JObject.Parse(message);
 
                 var result = jData.IsValid(jSchema, out IList<string> messages);

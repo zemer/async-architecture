@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Common.SchemaRegistry;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -16,27 +17,29 @@ namespace Tasks.MessageBroker
     public class Consumer : IMessageBrokerConsumer, IDisposable
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ISchemaRegistry _schemaRegistry;
+
         private readonly IConnection _connection;
         private readonly IModel _channel;
 
-        public Consumer(IServiceProvider serviceProvider)
+        public Consumer(IServiceProvider serviceProvider, ISchemaRegistry schemaRegistry)
         {
             _serviceProvider = serviceProvider;
+            _schemaRegistry = schemaRegistry;
             var factory = new ConnectionFactory() { HostName = "localhost" };
 
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-            _channel.QueueDeclare("accounts-stream",
-                false,
-                false,
-                false,
-                null);
+
+            _channel.ExchangeDeclare("accounts-stream", "direct");
+
+            var queue = _channel.QueueDeclare("accounts-stream-tasks", true, false, false, null);
+
+            _channel.QueueBind(queue.QueueName, "accounts-stream", "");
 
             var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += OnReceived;
-            _channel.BasicConsume("accounts-stream",
-                true,
-                consumer);
+            _channel.BasicConsume(queue.QueueName, true, consumer);
         }
 
         private async void OnReceived(object model, BasicDeliverEventArgs ea)
@@ -47,29 +50,33 @@ namespace Tasks.MessageBroker
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
 
-            var accountStream = JsonConvert.DeserializeObject<AccountStream>(message);
-
-            var account = await context.Accounts.FirstOrDefaultAsync(a => a.PublicId == accountStream.PublicId);
-
-            if (account is null)
+            if (_schemaRegistry.Validate(message, SchemaRegistry.Schemas.Accounts.Stream.V1))
             {
-                await context.Accounts.AddAsync(new Account
+                var payload = JsonConvert.DeserializeObject<AccountsStream>(message);
+                var data = payload.Data;
+
+                var account = await context.Accounts.FirstOrDefaultAsync(a => a.PublicId == data.AccountId);
+
+                if (account is null)
                 {
-                    PublicId = accountStream.PublicId,
-                    Username = accountStream.Username,
-                    Email = accountStream.Email,
-                    Role = accountStream.Role
-                });
+                    await context.Accounts.AddAsync(new Account
+                    {
+                        PublicId = data.AccountId,
+                        Username = data.Username,
+                        Email = data.Email,
+                        Role = data.Role
+                    });
 
-                await context.SaveChangesAsync();
-            }
-            else
-            {
-                account.Username = accountStream.Username;
-                account.Email = accountStream.Email;
-                account.Role = accountStream.Role;
+                    await context.SaveChangesAsync();
+                }
+                else
+                {
+                    account.Username = data.Username;
+                    account.Email = data.Email;
+                    account.Role = data.Role;
 
-                await context.SaveChangesAsync();
+                    await context.SaveChangesAsync();
+                }
             }
         }
 
@@ -84,14 +91,7 @@ namespace Tasks.MessageBroker
         #endregion
     }
 
-    public class AccountStream
-    {
-        public string PublicId { get; set; }
+    internal record AccountsStream(string EventId, int EventVersion, string EventName, string EventTime, string Producer, AccountInfo Data);
 
-        public string Username { get; set; }
-
-        public string Email { get; set; }
-
-        public string Role { get; set; }
-    }
+    internal record AccountInfo(string AccountId, string Username, string Email, string Role);
 }
