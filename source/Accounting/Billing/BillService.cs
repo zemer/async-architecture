@@ -28,7 +28,8 @@ namespace Accounting.Billing
                 PublicId = Guid.NewGuid()
                                .ToString(),
                 Task = task,
-                WrittenOff = task.AssignCost
+                WrittenOff = task.AssignCost,
+                Date = DateTimeOffset.Now
             });
 
             _context.SaveChanges();
@@ -43,7 +44,8 @@ namespace Accounting.Billing
                 PublicId = Guid.NewGuid()
                                .ToString(),
                 Task = task,
-                Accrued = task.CompleteCost
+                Accrued = task.CompleteCost,
+                Date = DateTimeOffset.Now
             });
 
             _context.SaveChanges();

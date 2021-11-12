@@ -1,8 +1,48 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model HomeModel
+
+@{
+    ViewData["Title"] = "My transactions";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<h1>My transactions</h1>
+<h2>Bill @(Model.Bill)$</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>
+            @Html.DisplayName("Date")
+        </th>
+        <th>
+            @Html.DisplayName("Fee")
+        </th>
+        <th>
+            @Html.DisplayName("Task")
+        </th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model.Transactions)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Date)
+            </td>
+            <td>
+                @if (item.WrittenOff > 0)
+                {
+                    @($"-{item.WrittenOff}")
+                }
+                else
+                {
+                    @($"+{item.Accrued}")
+                }
+            </td>
+            <td>
+                @(item.Task?.Description)
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

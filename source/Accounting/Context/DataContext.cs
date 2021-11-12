@@ -39,7 +39,7 @@ namespace Accounting.Context
 
                 entity.HasOne(d => d.Task)
                       .WithMany(p => p.Transactions)
-                      .HasForeignKey(d => d.AccountId)
+                      .HasForeignKey(d => d.TaskId)
                       .HasConstraintName("FK_Transaction_Task");
             });
         }

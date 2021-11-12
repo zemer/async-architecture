@@ -167,7 +167,7 @@ namespace Tasks.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TaskId,Description,JiraId")] Task task)
+        public async Task<IActionResult> Edit(int id, [Bind("TaskId,Description,JiraId,PublicId")] Task task)
         {
             if (id != task.TaskId)
             {
@@ -178,7 +178,10 @@ namespace Tasks.Controllers
             {
                 try
                 {
-                    _context.Update(task);
+                    var dbTask = await _context.Tasks.FindAsync(id);
+                    dbTask.Description = task.Description;
+                    dbTask.JiraId = task.JiraId;
+
                     await _context.SaveChangesAsync();
 
                     var data = new
@@ -191,9 +194,9 @@ namespace Tasks.Controllers
                         producer = "Tasks",
                         data = new
                         {
-                            taskId = task.PublicId,
-                            description = task.Description,
-                            jiraId = task.JiraId
+                            taskId = dbTask.PublicId,
+                            description = dbTask.Description,
+                            jiraId = dbTask.JiraId
                         }
                     };
 
