@@ -1,0 +1,27 @@
+﻿@model StatisticsModel
+
+@{
+    ViewData["Title"] = "Statistics";
+}
+
+<h1>Statistics</h1>
+<h2>Bill @(Model.Bill)$</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>
+            @Html.DisplayName("Date")
+        </th>
+        <th>
+            @Html.DisplayName("Fee")
+        </th>
+        <th>
+            @Html.DisplayName("Task")
+        </th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>

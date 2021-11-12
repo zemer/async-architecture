@@ -30,6 +30,12 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Accounts" asp-action="Index">Accounts</a>
                             </li>
                         }
+                        @if (User.Identity.IsAuthenticated && (User.IsInRole("Administrator") || User.IsInRole("Accountant")))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Statistics" asp-action="Index">Statistics</a>
+                            </li>
+                        }
                         @if (User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item">
