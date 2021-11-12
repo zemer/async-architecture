@@ -4,14 +4,16 @@ using Accounting.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Accounting.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20211112204922_transactions")]
+    partial class transactions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,9 +98,6 @@ namespace Accounting.Migrations
                     b.Property<float>("Accrued")
                         .HasColumnType("real");
 
-                    b.Property<DateTimeOffset>("Date")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<string>("PublicId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -113,7 +112,9 @@ namespace Accounting.Migrations
 
                     b.HasIndex("AccountId");
 
-                    b.ToTable("Transactions");
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("Transaction");
                 });
 
             modelBuilder.Entity("Accounting.Context.Task", b =>
@@ -131,14 +132,12 @@ namespace Accounting.Migrations
                     b.HasOne("Accounting.Context.Account", "Account")
                         .WithMany("Transactions")
                         .HasForeignKey("AccountId")
-                        .HasConstraintName("FK_Transaction_Account")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Accounting.Context.Task", "Task")
                         .WithMany("Transactions")
-                        .HasForeignKey("AccountId")
-                        .HasConstraintName("FK_Transaction_Task")
+                        .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

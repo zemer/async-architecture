@@ -1,12 +1,13 @@
-﻿using Accounting.Context;
+﻿using System;
+using Accounting.Context;
 
 namespace Accounting.Billing
 {
     public interface IBillService
     {
-        void Debit(Account account, Task task);
+        void WriteOff(Account account, Task task);
 
-        void Credit(Account account, Task task);
+        void Charge(Account account, Task task);
     }
 
     public class BillService : IBillService
@@ -18,15 +19,33 @@ namespace Accounting.Billing
             _context = context;
         }
 
-        public void Debit(Account account, Task task)
+        public void WriteOff(Account account, Task task)
         {
             account.Bill -= task.AssignCost;
+
+            account.Transactions.Add(new Transaction()
+            {
+                PublicId = Guid.NewGuid()
+                               .ToString(),
+                Task = task,
+                WrittenOff = task.AssignCost
+            });
+
             _context.SaveChanges();
         }
 
-        public void Credit(Account account, Task task)
+        public void Charge(Account account, Task task)
         {
             account.Bill += task.CompleteCost;
+
+            account.Transactions.Add(new Transaction()
+            {
+                PublicId = Guid.NewGuid()
+                               .ToString(),
+                Task = task,
+                Accrued = task.CompleteCost
+            });
+
             _context.SaveChanges();
         }
     }

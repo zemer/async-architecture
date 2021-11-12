@@ -217,7 +217,7 @@ namespace Accounting.MessageBroker
                     }
 
                     var billService = scope.ServiceProvider.GetRequiredService<IBillService>();
-                    billService.Debit(account, task);
+                    billService.WriteOff(account, task);
                 }
             }
         }
@@ -269,7 +269,7 @@ namespace Accounting.MessageBroker
                     }
 
                     var billService = scope.ServiceProvider.GetRequiredService<IBillService>();
-                    billService.Credit(account, task);
+                    billService.Charge(account, task);
                 }
             }
         }
