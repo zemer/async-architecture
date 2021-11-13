@@ -29,9 +29,14 @@ namespace Accounting.Controllers
             var assignedTaskFee = todayTransactions.Select(t => t.WrittenOff)
                                                    .Sum();
 
+            var todayPayments = await _context.Payments.Where(p => p.Date.Date == DateTimeOffset.Now.Date)
+                                              .Include(p => p.Account)
+                                              .ToArrayAsync();
+
             var model = new StatisticsModel
             {
-                Bill = (completedTaskAmount + assignedTaskFee) * -1
+                Bill = (completedTaskAmount + assignedTaskFee) * -1,
+                Payments = todayPayments
             };
 
             return View(model);

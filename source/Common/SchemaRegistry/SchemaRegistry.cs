@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Common.SchemaRegistry.Schemas.Accounting;
 using Common.SchemaRegistry.Schemas.Accounts;
 using Common.SchemaRegistry.Schemas.Tasks;
 using Newtonsoft.Json;
@@ -22,7 +23,8 @@ namespace Common.SchemaRegistry
                 { Schemas.Tasks.Stream.V1, TasksStream1Schema.Generate() },
                 { Schemas.Tasks.Assigned.V1, TasksAssigned1Schema.Generate() },
                 { Schemas.Tasks.Completed.V1, TasksCompleted1Schema.Generate() },
-                { Schemas.Accounts.Stream.V1, AccountsStream1Schema.Generate() }
+                { Schemas.Accounts.Stream.V1, AccountsStream1Schema.Generate() },
+                { Schemas.Accounting.Pay.V1, AccountingPay1Schema.Generate() }
             };
 
         #region Implementation of ISchemaRegistry
@@ -83,6 +85,14 @@ namespace Common.SchemaRegistry
                 public static class Stream
                 {
                     public const string V1 = "Accounts.Stream.1";
+                }
+            }
+
+            public static class Accounting
+            {
+                public static class Pay
+                {
+                    public const string V1 = "Accounting.Pay.1";
                 }
             }
         }

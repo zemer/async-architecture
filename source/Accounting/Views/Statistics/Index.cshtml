@@ -17,11 +17,25 @@
             @Html.DisplayName("Fee")
         </th>
         <th>
-            @Html.DisplayName("Task")
+            @Html.DisplayName("Account")
         </th>
         <th></th>
     </tr>
     </thead>
     <tbody>
+    @foreach (var item in Model.Payments)
+    {
+        <tr>
+            <td>
+                @item.Date.ToString("d")
+            </td>
+            <td>
+                @(Html.DisplayFor(modelItem => item.Fee))$
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Account.Username)
+            </td>
+        </tr>
+    }
     </tbody>
 </table>

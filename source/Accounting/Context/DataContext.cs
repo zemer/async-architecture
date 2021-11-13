@@ -18,6 +18,8 @@ namespace Accounting.Context
 
         public DbSet<Transaction> Transactions { get; set; }
 
+        public DbSet<Payment> Payments { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Cyrillic_General_CI_AS");
@@ -41,6 +43,14 @@ namespace Accounting.Context
                       .WithMany(p => p.Transactions)
                       .HasForeignKey(d => d.TaskId)
                       .HasConstraintName("FK_Transaction_Task");
+            });
+
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.HasOne(d => d.Account)
+                      .WithMany(p => p.Payments)
+                      .HasForeignKey(d => d.AccountId)
+                      .HasConstraintName("FK_Payment_Account");
             });
         }
     }
@@ -82,6 +92,7 @@ namespace Accounting.Context
         {
             Tasks = new HashSet<Task>();
             Transactions = new HashSet<Transaction>();
+            Payments = new HashSet<Payment>();
         }
 
         [Key] public int AccountId { get; set; }
@@ -101,6 +112,9 @@ namespace Accounting.Context
 
         [InverseProperty(nameof(Transaction.Account))]
         public virtual ICollection<Transaction> Transactions { get; set; }
+
+        [InverseProperty(nameof(Transaction.Account))]
+        public virtual ICollection<Payment> Payments { get; set; }
     }
 
     public class Transaction
@@ -132,5 +146,20 @@ namespace Accounting.Context
         [ForeignKey(nameof(TaskId))]
         [InverseProperty(nameof(Context.Task.Transactions))]
         public virtual Task Task { get; set; }
+    }
+
+    public class Payment
+    {
+        [Key] public int TransactionId { get; set; }
+
+        public float Fee { get; set; }
+
+        public int AccountId { get; set; }
+
+        public DateTimeOffset Date { get; set; }
+
+        [ForeignKey(nameof(AccountId))]
+        [InverseProperty(nameof(Context.Account.Payments))]
+        public virtual Account Account { get; set; }
     }
 }

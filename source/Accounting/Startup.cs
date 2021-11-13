@@ -1,5 +1,6 @@
 using Accounting.Billing;
 using Accounting.MessageBroker;
+using Accounting.Schedule;
 using Common.MessageBroker;
 using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -39,6 +40,9 @@ namespace Accounting
 
             services.AddScoped<IMessageBrokerProducer, Producer>();
             services.AddScoped<IBillService, BillService>();
+
+            services.AddSingleton<IScheduledTask, PaySchedule>();
+            services.AddScheduler();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
