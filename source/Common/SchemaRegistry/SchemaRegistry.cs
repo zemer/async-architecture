@@ -2,6 +2,7 @@
 using Common.SchemaRegistry.Schemas.Accounting;
 using Common.SchemaRegistry.Schemas.Accounts;
 using Common.SchemaRegistry.Schemas.Tasks;
+using Common.SchemaRegistry.Schemas.Transactions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
@@ -24,6 +25,7 @@ namespace Common.SchemaRegistry
                 { Schemas.Tasks.Assigned.V1, TasksAssigned1Schema.Generate() },
                 { Schemas.Tasks.Completed.V1, TasksCompleted1Schema.Generate() },
                 { Schemas.Accounts.Stream.V1, AccountsStream1Schema.Generate() },
+                { Schemas.Transactions.Stream.V1, TransactionsStream1Schema.Generate() },
                 { Schemas.Accounting.Pay.V1, AccountingPay1Schema.Generate() }
             };
 
@@ -93,6 +95,14 @@ namespace Common.SchemaRegistry
                 public static class Pay
                 {
                     public const string V1 = "Accounting.Pay.1";
+                }
+            }
+
+            public static class Transactions
+            {
+                public static class Stream
+                {
+                    public const string V1 = "Transactions.Stream.1";
                 }
             }
         }

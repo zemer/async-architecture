@@ -52,7 +52,7 @@ namespace Accounting.Schedule
 
                     if (schemaRegistry.Validate(data, SchemaRegistry.Schemas.Accounting.Pay.V1))
                     {
-                        await messageBrokerProducer.Produce("accounting-pay", data);
+                        messageBrokerProducer.Produce("accounting-pay", data);
                     }
 
                     await context.Payments.AddAsync(new Payment

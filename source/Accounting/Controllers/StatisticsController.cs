@@ -21,15 +21,19 @@ namespace Accounting.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var todayTransactions = await _context.Transactions.Where(t => t.Date.Date == DateTimeOffset.Now.Date)
+            var todayTransactions = await _context.Transactions
+                                                  .Where(t => t.Date.Date == DateTimeOffset.Now.Date)
                                                   .ToArrayAsync();
 
-            var completedTaskAmount = todayTransactions.Select(t => t.Accrued)
-                                                       .Sum();
-            var assignedTaskFee = todayTransactions.Select(t => t.WrittenOff)
-                                                   .Sum();
+            var completedTaskAmount = todayTransactions
+                                      .Select(t => t.Accrued)
+                                      .Sum();
+            var assignedTaskFee = todayTransactions
+                                  .Select(t => t.WrittenOff)
+                                  .Sum();
 
-            var todayPayments = await _context.Payments.Where(p => p.Date.Date == DateTimeOffset.Now.Date)
+            var todayPayments = await _context.Payments
+                                              .Where(p => p.Date.Date == DateTimeOffset.Now.Date)
                                               .Include(p => p.Account)
                                               .ToArrayAsync();
 

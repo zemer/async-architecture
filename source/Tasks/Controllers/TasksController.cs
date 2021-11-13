@@ -86,7 +86,7 @@ namespace Tasks.Controllers
 
                 if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Stream.V1))
                 {
-                    await _messageBrokerProducer.Produce("tasks-stream", data);
+                    _messageBrokerProducer.Produce("tasks-stream", data);
                 }
 
                 await AssignTask(task);
@@ -140,7 +140,7 @@ namespace Tasks.Controllers
 
                 if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Assigned.V1))
                 {
-                    await _messageBrokerProducer.Produce("tasks-assigned", data);
+                    _messageBrokerProducer.Produce("tasks-assigned", data);
                 }
             }
         }
@@ -202,7 +202,7 @@ namespace Tasks.Controllers
 
                     if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Stream.V1))
                     {
-                        await _messageBrokerProducer.Produce("tasks-stream", data);
+                        _messageBrokerProducer.Produce("tasks-stream", data);
                     }
                 }
                 catch (DbUpdateConcurrencyException)

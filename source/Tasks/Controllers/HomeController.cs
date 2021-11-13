@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
@@ -8,7 +6,9 @@ using System.Threading.Tasks;
 using Common.MessageBroker;
 using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Tasks.Context;
 using Tasks.Models;
 
@@ -82,7 +82,7 @@ namespace Tasks.Controllers
 
             if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Completed.V1))
             {
-                await _messageBrokerProducer.Produce("tasks-completed", data);
+                _messageBrokerProducer.Produce("tasks-completed", data);
             }
 
             return RedirectToAction(nameof(Index));

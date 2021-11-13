@@ -67,7 +67,7 @@ namespace Auth.Controllers
 
                 if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Accounts.Stream.V1))
                 {
-                    await _messageBrokerProducer.Produce("accounts-stream", data);
+                    _messageBrokerProducer.Produce("accounts-stream", data);
                 }
 
                 return RedirectToAction("Index", "Home");

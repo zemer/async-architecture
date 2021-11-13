@@ -2,13 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Auth.Context;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Auth.Models;
 using Common.MessageBroker;
 using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Controllers
 {
@@ -102,7 +102,7 @@ namespace Auth.Controllers
 
                     if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Accounts.Stream.V1))
                     {
-                        await _messageBrokerProducer.Produce("accounts-stream", data);
+                        _messageBrokerProducer.Produce("accounts-stream", data);
                     }
 
                     return RedirectToAction(nameof(Index));
@@ -183,7 +183,7 @@ namespace Auth.Controllers
 
                     if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Accounts.Stream.V1))
                     {
-                        await _messageBrokerProducer.Produce("accounts-stream", data);
+                        _messageBrokerProducer.Produce("accounts-stream", data);
                     }
                 }
                 catch (DbUpdateConcurrencyException)
