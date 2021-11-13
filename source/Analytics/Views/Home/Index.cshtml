@@ -1,8 +1,8 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model HomeModel
+
+@{
+    ViewData["Title"] = "Analytics";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<h4>How much top management earned today: @(Model.Bill)$</h4>
+<h4>How many parrots went negative: @(Model.NegativeParrots)</h4>

@@ -139,25 +139,36 @@ namespace Analytics.MessageBroker
 
                 lock (this)
                 {
-                    var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
+                    var account = context.Accounts.FirstOrDefault(a => a.PublicId == data.AccountId);
+                    if (account is null)
+                    {
+                        account = new Account
+                        {
+                            PublicId = data.AccountId,
+                            Bill = data.AccountBill
+                        };
+                        context.Accounts.Add(account);
+                    }
+                    else
+                    {
+                        account.Bill = data.AccountBill;
+                    }
 
+                    var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
                     if (task is null)
                     {
                         task = new Task
                         {
-                            PublicId = data.TaskId,
-                            AccountId = data.AccountId
+                            PublicId = data.TaskId
                         };
                         context.Tasks.Add(task);
                     }
-                    else
-                    {
-                        task.AccountId = data.AccountId;
-                    }
+
+                    task.Account = account;
 
                     task.Transactions.Add(new Transaction
                     {
-                        AccountId = data.AccountId,
+                        Account = account,
                         PublicId = data.TransactionId,
                         Date = data.Date,
                         WrittenOff = data.WrittenOff,
@@ -303,6 +314,7 @@ namespace Analytics.MessageBroker
     internal record TransactionsStream(string EventId, int EventVersion, string EventName, string EventTime, string Producer,
         TransactionStreamInfo Data);
 
-    internal record TransactionStreamInfo(string TransactionId, string AccountId, string TaskId, DateTimeOffset Date, float Accrued,
+    internal record TransactionStreamInfo(string TransactionId, string AccountId, float AccountBill, string TaskId, DateTimeOffset Date,
+        float Accrued,
         float WrittenOff);
 }

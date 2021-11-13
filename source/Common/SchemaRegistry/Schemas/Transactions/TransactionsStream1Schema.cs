@@ -13,11 +13,12 @@ namespace Common.SchemaRegistry.Schemas.Transactions
                 {
                     { "transactionId", new JSchema { Type = JSchemaType.String } },
                     { "accountId", new JSchema { Type = JSchemaType.String } },
+                    { "accountBill", new JSchema { Type = JSchemaType.Number } },
                     { "taskId", new JSchema { Type = JSchemaType.String } },
                     { "accrued", new JSchema { Type = JSchemaType.Number } },
                     { "writtenOff", new JSchema { Type = JSchemaType.Number } }
                 },
-                Required = { "transactionId", "accountId", "taskId", "accrued", "writtenOff" }
+                Required = { "transactionId", "accountId", "accountBill", "taskId", "accrued", "writtenOff" }
             };
 
             return SchemaVersion.Generate(dataSchema);

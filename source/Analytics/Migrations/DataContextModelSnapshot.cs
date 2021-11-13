@@ -20,6 +20,33 @@ namespace Analytics.Migrations
                 .HasAnnotation("ProductVersion", "5.0.11")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+            modelBuilder.Entity("Analytics.Context.Account", b =>
+                {
+                    b.Property<int>("AccountId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<float>("Bill")
+                        .HasColumnType("real");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PublicId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AccountId");
+
+                    b.ToTable("Accounts");
+                });
+
             modelBuilder.Entity("Analytics.Context.Task", b =>
                 {
                     b.Property<int>("TaskId")
@@ -27,8 +54,8 @@ namespace Analytics.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("AccountId")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("int");
 
                     b.Property<float>("AssignCost")
                         .HasColumnType("real");
@@ -51,6 +78,8 @@ namespace Analytics.Migrations
 
                     b.HasKey("TaskId");
 
+                    b.HasIndex("AccountId");
+
                     b.ToTable("Tasks");
                 });
 
@@ -61,8 +90,8 @@ namespace Analytics.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<string>("AccountId")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
 
                     b.Property<float>("Accrued")
                         .HasColumnType("real");
@@ -82,13 +111,32 @@ namespace Analytics.Migrations
 
                     b.HasKey("TransactionId");
 
+                    b.HasIndex("AccountId");
+
                     b.HasIndex("TaskId");
 
                     b.ToTable("Transactions");
                 });
 
+            modelBuilder.Entity("Analytics.Context.Task", b =>
+                {
+                    b.HasOne("Analytics.Context.Account", "Account")
+                        .WithMany("Tasks")
+                        .HasForeignKey("AccountId")
+                        .HasConstraintName("FK_Task_Account");
+
+                    b.Navigation("Account");
+                });
+
             modelBuilder.Entity("Analytics.Context.Transaction", b =>
                 {
+                    b.HasOne("Analytics.Context.Account", "Account")
+                        .WithMany("Transactions")
+                        .HasForeignKey("AccountId")
+                        .HasConstraintName("FK_Transaction_Account")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Analytics.Context.Task", "Task")
                         .WithMany("Transactions")
                         .HasForeignKey("TaskId")
@@ -96,7 +144,16 @@ namespace Analytics.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Account");
+
                     b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("Analytics.Context.Account", b =>
+                {
+                    b.Navigation("Tasks");
+
+                    b.Navigation("Transactions");
                 });
 
             modelBuilder.Entity("Analytics.Context.Task", b =>

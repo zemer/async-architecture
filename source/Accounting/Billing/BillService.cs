@@ -77,6 +77,7 @@ namespace Accounting.Billing
                 {
                     transactionId = transaction.PublicId,
                     accountId = account.PublicId,
+                    accountBill = account.Bill,
                     taskId = task.PublicId,
                     date = transaction.Date,
                     accrued = transaction.Accrued,
