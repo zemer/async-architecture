@@ -25,23 +25,50 @@ namespace Analytics.Controllers
 
         public async Task<IActionResult> Index()
         {
+            var now = DateTimeOffset.Now;
+
             var todayTransactions = await _context.Transactions
-                                                  .Where(t => t.Date.Date == DateTimeOffset.Now.Date)
-                                                  .ToArrayAsync();
+                .Where(t => t.Date.Date == now.Date)
+                .ToArrayAsync();
 
             var completedTaskAmount = todayTransactions
-                                      .Select(t => t.Accrued)
-                                      .Sum();
+                .Select(t => t.Accrued)
+                .Sum();
             var assignedTaskFee = todayTransactions
-                                  .Select(t => t.WrittenOff)
-                                  .Sum();
+                .Select(t => t.WrittenOff)
+                .Sum();
 
             var negativeParrots = await _context.Accounts.CountAsync(a => a.Bill < 0);
+
+            var mostExpensiveMonthTask = await _context.Tasks
+                .Where(t => t.CompleteCost == _context.Tasks
+                    .Where(ti => ti.Completed)
+                    .Where(ti => ti.DateCompleted.Month == now.Month)
+                    .Max(ti => ti.CompleteCost))
+                .FirstOrDefaultAsync();
+
+            var mostExpensiveWeekTask = await _context.Tasks
+                .Where(t => t.CompleteCost == _context.Tasks
+                    .Where(ti => ti.Completed)
+                    .Where(ti => ti.DateCompleted.DayOfYear <= now.DayOfYear && ti.DateCompleted.DayOfYear >= now.AddDays(-7)
+                        .DayOfYear)
+                    .Max(ti => ti.CompleteCost))
+                .FirstOrDefaultAsync();
+
+            var mostExpensiveDayTask = await _context.Tasks
+                .Where(t => t.CompleteCost == _context.Tasks
+                    .Where(ti => ti.Completed)
+                    .Where(ti => ti.DateCompleted.DayOfYear == now.DayOfYear)
+                    .Max(ti => ti.CompleteCost))
+                .FirstOrDefaultAsync();
 
             var model = new HomeModel
             {
                 Bill = (completedTaskAmount + assignedTaskFee) * -1,
-                NegativeParrots = negativeParrots
+                NegativeParrots = negativeParrots,
+                MostExpensiveMonthTask = $"{mostExpensiveMonthTask?.Description} - {mostExpensiveMonthTask?.CompleteCost}$",
+                MostExpensiveWeekTask = $"{mostExpensiveWeekTask?.Description} - {mostExpensiveWeekTask?.CompleteCost}$",
+                MostExpensiveDayTask = $"{mostExpensiveDayTask?.Description} - {mostExpensiveDayTask?.CompleteCost}$"
             };
 
             return View(model);

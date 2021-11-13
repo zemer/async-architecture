@@ -1,6 +1,7 @@
 using Accounting.Billing;
 using Accounting.MessageBroker;
 using Accounting.Schedule;
+using Accounting.Services;
 using Common.MessageBroker;
 using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -35,11 +36,13 @@ namespace Accounting
 
             var schemaRegistry = new SchemaRegistry();
             services.AddSingleton<ISchemaRegistry>(schemaRegistry);
+            var producer = new Producer();
+            services.AddSingleton<IMessageBrokerProducer>(producer);
             services.AddSingleton<IMessageBrokerConsumer, Consumer>(x => new Consumer(x, schemaRegistry));
             services.AddSingleton<ICostCalculator, CostCalculator>();
 
-            services.AddScoped<IMessageBrokerProducer, Producer>();
             services.AddScoped<IBillService, BillService>();
+            services.AddScoped<ITasksService, TasksService>();
 
             services.AddSingleton<IScheduledTask, PaySchedule>();
             services.AddScheduler();

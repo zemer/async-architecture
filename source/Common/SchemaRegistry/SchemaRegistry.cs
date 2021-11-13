@@ -26,7 +26,8 @@ namespace Common.SchemaRegistry
                 { Schemas.Tasks.Completed.V1, TasksCompleted1Schema.Generate() },
                 { Schemas.Accounts.Stream.V1, AccountsStream1Schema.Generate() },
                 { Schemas.Transactions.Stream.V1, TransactionsStream1Schema.Generate() },
-                { Schemas.Accounting.Pay.V1, AccountingPay1Schema.Generate() }
+                { Schemas.Accounting.Pay.V1, AccountingPay1Schema.Generate() },
+                { Schemas.Accounting.Costs.V1, AccountingCosts1Schema.Generate() }
             };
 
         #region Implementation of ISchemaRegistry
@@ -95,6 +96,11 @@ namespace Common.SchemaRegistry
                 public static class Pay
                 {
                     public const string V1 = "Accounting.Pay.1";
+                }
+
+                public static class Costs
+                {
+                    public const string V1 = "Accounting.Costs.1";
                 }
             }
 

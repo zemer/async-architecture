@@ -64,9 +64,9 @@ namespace Analytics.Context
 
         public int? AccountId { get; set; }
 
-        public float AssignCost { get; set; }
-
         public float CompleteCost { get; set; }
+
+        public DateTimeOffset DateCompleted { get; set; }
 
         [ForeignKey(nameof(AccountId))]
         [InverseProperty(nameof(Context.Account.Tasks))]

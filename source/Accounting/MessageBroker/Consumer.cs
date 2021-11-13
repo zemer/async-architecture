@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using Accounting.Billing;
 using Accounting.Context;
+using Accounting.Services;
 using Common.SchemaRegistry;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -27,6 +28,7 @@ namespace Accounting.MessageBroker
         {
             _serviceProvider = serviceProvider;
             _schemaRegistry = schemaRegistry;
+
             var factory = new ConnectionFactory() { HostName = "localhost" };
 
             _connection = factory.CreateConnection();
@@ -131,6 +133,7 @@ namespace Accounting.MessageBroker
         {
             using var scope = _serviceProvider.CreateScope();
             await using var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+            var tasksService = scope.ServiceProvider.GetRequiredService<ITasksService>();
 
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
@@ -143,21 +146,9 @@ namespace Accounting.MessageBroker
                 lock (this)
                 {
                     var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
-
                     if (task is null)
                     {
-                        var costCalculator = _serviceProvider.GetRequiredService<ICostCalculator>();
-
-                        context.Tasks.Add(new Task
-                        {
-                            PublicId = data.TaskId,
-                            Description = data.Description,
-                            JiraId = data.JiraId,
-                            AssignCost = costCalculator.GetAssignCost(),
-                            CompleteCost = costCalculator.GetCompleteCost()
-                        });
-
-                        context.SaveChanges();
+                        task = tasksService.CreateTask(data.TaskId, data.Description, data.JiraId);
                     }
                     else
                     {
@@ -174,6 +165,7 @@ namespace Accounting.MessageBroker
         {
             using var scope = _serviceProvider.CreateScope();
             await using var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+            var tasksService = scope.ServiceProvider.GetRequiredService<ITasksService>();
 
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
@@ -192,29 +184,13 @@ namespace Accounting.MessageBroker
                 lock (this)
                 {
                     var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
-
                     if (task is null)
                     {
-                        var costCalculator = _serviceProvider.GetRequiredService<ICostCalculator>();
-
-                        task = new Task
-                        {
-                            PublicId = data.TaskId,
-                            Account = account,
-                            AssignCost = costCalculator.GetAssignCost(),
-                            CompleteCost = costCalculator.GetCompleteCost()
-                        };
-
-                        context.Tasks.Add(task);
-
-                        context.SaveChanges();
+                        task = tasksService.CreateTask(data.TaskId);
                     }
-                    else
-                    {
-                        task.Account = account;
 
-                        context.SaveChanges();
-                    }
+                    task.Account = account;
+                    context.SaveChanges();
 
                     var billService = scope.ServiceProvider.GetRequiredService<IBillService>();
                     billService.WriteOff(account, task);
@@ -226,6 +202,7 @@ namespace Accounting.MessageBroker
         {
             using var scope = _serviceProvider.CreateScope();
             await using var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+            var tasksService = scope.ServiceProvider.GetRequiredService<ITasksService>();
 
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
@@ -244,29 +221,13 @@ namespace Accounting.MessageBroker
                                   };
 
                     var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
-
                     if (task is null)
                     {
-                        var costCalculator = _serviceProvider.GetRequiredService<ICostCalculator>();
-
-                        task = new Task
-                        {
-                            PublicId = data.TaskId,
-                            Account = account,
-                            AssignCost = costCalculator.GetAssignCost(),
-                            CompleteCost = costCalculator.GetCompleteCost()
-                        };
-
-                        context.Tasks.Add(task);
-
-                        context.SaveChanges();
+                        task = tasksService.CreateTask(data.TaskId);
                     }
-                    else
-                    {
-                        task.Account = account;
 
-                        context.SaveChanges();
-                    }
+                    task.Account = account;
+                    context.SaveChanges();
 
                     var billService = scope.ServiceProvider.GetRequiredService<IBillService>();
                     billService.Charge(account, task);

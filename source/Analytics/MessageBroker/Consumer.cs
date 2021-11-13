@@ -32,9 +32,9 @@ namespace Analytics.MessageBroker
             _channel = _connection.CreateModel();
 
             ConsumeTasksStream();
-            //ConsumeTasksAssigned();
-            //ConsumeTasksCompleted();
             ConsumeTransactionsStream();
+            ConsumeAccountingCosts();
+            ConsumeTasksCompleted();
         }
 
         private void ConsumeTasksStream()
@@ -61,29 +61,29 @@ namespace Analytics.MessageBroker
             _channel.BasicConsume(queue.QueueName, true, consumer);
         }
 
-        //private void ConsumeTasksAssigned()
-        //{
-        //    _channel.ExchangeDeclare("tasks-assigned", "direct");
+        private void ConsumeAccountingCosts()
+        {
+            _channel.ExchangeDeclare("accounting-costs", "direct");
 
-        //    var queue = _channel.QueueDeclare("tasks-assigned-accounting", true, false, false, null);
-        //    _channel.QueueBind(queue.QueueName, "tasks-assigned", "");
+            var queue = _channel.QueueDeclare("accounting-costs-analytics", true, false, false, null);
+            _channel.QueueBind(queue.QueueName, "accounting-costs", "");
 
-        //    var consumer = new EventingBasicConsumer(_channel);
-        //    consumer.Received += OnTasksAssignedReceived;
-        //    _channel.BasicConsume(queue.QueueName, true, consumer);
-        //}
+            var consumer = new EventingBasicConsumer(_channel);
+            consumer.Received += OnAccountingCostsReceived;
+            _channel.BasicConsume(queue.QueueName, true, consumer);
+        }
 
-        //private void ConsumeTasksCompleted()
-        //{
-        //    _channel.ExchangeDeclare("tasks-completed", "direct");
+        private void ConsumeTasksCompleted()
+        {
+            _channel.ExchangeDeclare("tasks-completed", "direct");
 
-        //    var queue = _channel.QueueDeclare("tasks-completed-accounting", true, false, false, null);
-        //    _channel.QueueBind(queue.QueueName, "tasks-completed", "");
+            var queue = _channel.QueueDeclare("tasks-completed-analytics", true, false, false, null);
+            _channel.QueueBind(queue.QueueName, "tasks-completed", "");
 
-        //    var consumer = new EventingBasicConsumer(_channel);
-        //    consumer.Received += OnTasksCompletedReceived;
-        //    _channel.BasicConsume(queue.QueueName, true, consumer);
-        //}
+            var consumer = new EventingBasicConsumer(_channel);
+            consumer.Received += OnTasksCompletedReceived;
+            _channel.BasicConsume(queue.QueueName, true, consumer);
+        }
 
         private async void OnTasksStreamReceived(object model, BasicDeliverEventArgs ea)
         {
@@ -180,109 +180,81 @@ namespace Analytics.MessageBroker
             }
         }
 
-        //private async void OnTasksAssignedReceived(object model, BasicDeliverEventArgs ea)
-        //{
-        //    using var scope = _serviceProvider.CreateScope();
-        //    await using var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+        private async void OnAccountingCostsReceived(object model, BasicDeliverEventArgs ea)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            await using var context = scope.ServiceProvider.GetRequiredService<DataContext>();
 
-        //    var body = ea.Body.ToArray();
-        //    var message = Encoding.UTF8.GetString(body);
+            var body = ea.Body.ToArray();
+            var message = Encoding.UTF8.GetString(body);
 
-        //    if (_schemaRegistry.Validate(message, SchemaRegistry.Schemas.Tasks.Assigned.V1))
-        //    {
-        //        var payload = JsonConvert.DeserializeObject<TasksAssigned>(message);
-        //        var data = payload.Data;
+            if (_schemaRegistry.Validate(message, SchemaRegistry.Schemas.Accounting.Costs.V1))
+            {
+                var payload = JsonConvert.DeserializeObject<AccountingCosts>(message);
+                var data = payload.Data;
 
-        //        var account = context.Accounts.FirstOrDefault(a => a.PublicId == data.AccountId)
-        //                      ?? new Account
-        //                      {
-        //                          PublicId = data.AccountId
-        //                      };
+                lock (this)
+                {
+                    var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
+                    if (task is null)
+                    {
+                        task = new Task
+                        {
+                            PublicId = data.TaskId
+                        };
+                        context.Tasks.Add(task);
+                    }
 
-        //        lock (this)
-        //        {
-        //            var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
+                    task.CompleteCost = data.CompleteCost;
 
-        //            if (task is null)
-        //            {
-        //                var costCalculator = _serviceProvider.GetRequiredService<ICostCalculator>();
+                    context.SaveChanges();
+                }
+            }
+        }
 
-        //                task = new Task
-        //                {
-        //                    PublicId = data.TaskId,
-        //                    Account = account,
-        //                    AssignCost = costCalculator.GetAssignCost(),
-        //                    CompleteCost = costCalculator.GetCompleteCost()
-        //                };
+        private async void OnTasksCompletedReceived(object model, BasicDeliverEventArgs ea)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            await using var context = scope.ServiceProvider.GetRequiredService<DataContext>();
 
-        //                context.Tasks.Add(task);
+            var body = ea.Body.ToArray();
+            var message = Encoding.UTF8.GetString(body);
 
-        //                context.SaveChanges();
-        //            }
-        //            else
-        //            {
-        //                task.Account = account;
+            if (_schemaRegistry.Validate(message, SchemaRegistry.Schemas.Tasks.Completed.V1))
+            {
+                var payload = JsonConvert.DeserializeObject<TasksCompleted>(message);
+                var data = payload.Data;
 
-        //                context.SaveChanges();
-        //            }
+                lock (this)
+                {
+                    var account = context.Accounts.FirstOrDefault(a => a.PublicId == data.AccountId);
+                    if (account is null)
+                    {
+                        account = new Account
+                        {
+                            PublicId = data.AccountId
+                        };
+                        context.Accounts.Add(account);
+                    }
 
-        //            var billService = scope.ServiceProvider.GetRequiredService<IBillService>();
-        //            billService.WriteOff(account, task);
-        //        }
-        //    }
-        //}
+                    var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
+                    if (task is null)
+                    {
+                        task = new Task
+                        {
+                            PublicId = data.TaskId
+                        };
+                        context.Tasks.Add(task);
+                    }
 
-        //private async void OnTasksCompletedReceived(object model, BasicDeliverEventArgs ea)
-        //{
-        //    using var scope = _serviceProvider.CreateScope();
-        //    await using var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+                    task.Account = account;
+                    task.Completed = true;
+                    task.DateCompleted = DateTimeOffset.Now;
 
-        //    var body = ea.Body.ToArray();
-        //    var message = Encoding.UTF8.GetString(body);
-
-        //    if (_schemaRegistry.Validate(message, SchemaRegistry.Schemas.Tasks.Completed.V1))
-        //    {
-        //        var payload = JsonConvert.DeserializeObject<TasksCompleted>(message);
-        //        var data = payload.Data;
-
-        //        lock (this)
-        //        {
-        //            var account = context.Accounts.FirstOrDefault(a => a.PublicId == data.AccountId)
-        //                          ?? new Account
-        //                          {
-        //                              PublicId = data.AccountId
-        //                          };
-
-        //            var task = context.Tasks.FirstOrDefault(a => a.PublicId == data.TaskId);
-
-        //            if (task is null)
-        //            {
-        //                var costCalculator = _serviceProvider.GetRequiredService<ICostCalculator>();
-
-        //                task = new Task
-        //                {
-        //                    PublicId = data.TaskId,
-        //                    Account = account,
-        //                    AssignCost = costCalculator.GetAssignCost(),
-        //                    CompleteCost = costCalculator.GetCompleteCost()
-        //                };
-
-        //                context.Tasks.Add(task);
-
-        //                context.SaveChanges();
-        //            }
-        //            else
-        //            {
-        //                task.Account = account;
-
-        //                context.SaveChanges();
-        //            }
-
-        //            var billService = scope.ServiceProvider.GetRequiredService<IBillService>();
-        //            billService.Charge(account, task);
-        //        }
-        //    }
-        //}
+                    context.SaveChanges();
+                }
+            }
+        }
 
         #region Implementation of IDisposable
 
@@ -303,9 +275,9 @@ namespace Analytics.MessageBroker
 
     internal record TaskStreamInfo(string TaskId, string Description, string JiraId);
 
-    internal record TasksAssigned(string EventId, int EventVersion, string EventName, string EventTime, string Producer, TaskAssignedInfo Data);
+    internal record AccountingCosts(string EventId, int EventVersion, string EventName, string EventTime, string Producer, AccountigCostsInfo Data);
 
-    internal record TaskAssignedInfo(string TaskId, string AccountId);
+    internal record AccountigCostsInfo(string TaskId, float AssignCost, float CompleteCost);
 
     internal record TasksCompleted(string EventId, int EventVersion, string EventName, string EventTime, string Producer, TaskCompletedInfo Data);
 
