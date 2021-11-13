@@ -1,12 +1,14 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Auth.Context;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Auth.Models;
 using Common.MessageBroker;
+using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Controllers
 {
@@ -16,12 +18,14 @@ namespace Auth.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
         private readonly IMessageBrokerProducer _messageBrokerProducer;
+        private readonly ISchemaRegistry _schemaRegistry;
 
         public AccountController(DataContext context, UserManager<AppUser> userManager, RoleManager<AppRole> roleManager,
-            IMessageBrokerProducer messageBrokerProducer)
+            IMessageBrokerProducer messageBrokerProducer, ISchemaRegistry schemaRegistry)
         {
             _context = context;
             _messageBrokerProducer = messageBrokerProducer;
+            _schemaRegistry = schemaRegistry;
             _userManager = userManager;
             _roleManager = roleManager;
         }
@@ -29,7 +33,8 @@ namespace Auth.Controllers
         // GET: Users
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Users.Include(u => u.Role).ToListAsync());
+            return View(await _context.Users.Include(u => u.Role)
+                                      .ToListAsync());
         }
 
         // GET: Users/Details/5
@@ -41,7 +46,7 @@ namespace Auth.Controllers
             }
 
             var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
+                                     .FirstOrDefaultAsync(m => m.Id == id);
             if (user == null)
             {
                 return NotFound();
@@ -74,10 +79,31 @@ namespace Auth.Controllers
                 var result = await _userManager.CreateAsync(user, request.Password);
                 if (result.Succeeded)
                 {
-                    await _context.Entry(user).Reference(u => u.Role).LoadAsync();
+                    await _context.Entry(user)
+                                  .Reference(u => u.Role)
+                                  .LoadAsync();
 
-                    await _messageBrokerProducer.Produce("auth-stream",
-                        new { PublicId = user.Id, Username = user.UserName, Email = user.Email, Role = user.Role?.Name });
+                    var data = new
+                    {
+                        eventId = Guid.NewGuid()
+                                      .ToString(),
+                        eventVersion = 1,
+                        eventName = "Accounts.Stream",
+                        eventTime = DateTimeOffset.Now.ToString(),
+                        producer = "Accounts",
+                        data = new
+                        {
+                            accountId = user.Id,
+                            username = user.UserName,
+                            email = user.Email,
+                            role = user.Role?.Name
+                        }
+                    };
+
+                    if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Accounts.Stream.V1))
+                    {
+                        _messageBrokerProducer.Produce("accounts-stream", data);
+                    }
 
                     return RedirectToAction(nameof(Index));
                 }
@@ -100,7 +126,9 @@ namespace Auth.Controllers
                 return NotFound();
             }
 
-            await _context.Entry(user).Reference(u => u.Role).LoadAsync();
+            await _context.Entry(user)
+                          .Reference(u => u.Role)
+                          .LoadAsync();
 
             ViewBag.Roles = new SelectList(await _roleManager.Roles.ToArrayAsync(), nameof(AppRole.Id), nameof(AppRole.Name));
 
@@ -132,13 +160,31 @@ namespace Auth.Controllers
                     await _userManager.UpdateAsync(dbUser);
                     await _context.SaveChangesAsync();
 
-                    await _context.Entry(dbUser).Reference(u => u.Role).LoadAsync();
+                    await _context.Entry(dbUser)
+                                  .Reference(u => u.Role)
+                                  .LoadAsync();
 
-                    await _messageBrokerProducer.Produce("auth-stream",
-                        new
+                    var data = new
+                    {
+                        eventId = Guid.NewGuid()
+                                      .ToString(),
+                        eventVersion = 1,
+                        eventName = "Accounts.Stream",
+                        eventTime = DateTimeOffset.Now.ToString(),
+                        producer = "Accounts",
+                        data = new
                         {
-                            PublicId = dbUser.Id, Username = dbUser.UserName, Email = dbUser.Email, Role = dbUser.Role?.Name
-                        });
+                            accountId = dbUser.Id,
+                            username = dbUser.UserName,
+                            email = dbUser.Email,
+                            role = dbUser.Role?.Name
+                        }
+                    };
+
+                    if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Accounts.Stream.V1))
+                    {
+                        _messageBrokerProducer.Produce("accounts-stream", data);
+                    }
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -167,7 +213,7 @@ namespace Auth.Controllers
             }
 
             var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
+                                     .FirstOrDefaultAsync(m => m.Id == id);
             if (user == null)
             {
                 return NotFound();

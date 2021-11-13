@@ -1,5 +1,4 @@
-﻿using Auth.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Auth.Context
@@ -17,10 +16,11 @@ namespace Auth.Context
             base.OnModelCreating(builder);
 
             builder.Entity<AppRole>()
-                .HasData(
-                    new AppRole { Name = "Worker", NormalizedName = "WORKER" },
-                    new AppRole { Name = "Manager", NormalizedName = "MANAGER" },
-                    new AppRole { Name = "Administrator", NormalizedName = "ADMINISTRATOR" });
+                   .HasData(
+                       new AppRole { Name = "Worker", NormalizedName = "WORKER" },
+                       new AppRole { Name = "Manager", NormalizedName = "MANAGER" },
+                       new AppRole { Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
+                       new AppRole { Name = "Accountant", NormalizedName = "ACCOUNTANT" });
         }
 
         #endregion

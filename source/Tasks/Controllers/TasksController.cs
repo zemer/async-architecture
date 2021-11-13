@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Common.MessageBroker;
+using Common.SchemaRegistry;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Tasks.Context;
@@ -13,17 +14,20 @@ namespace Tasks.Controllers
     {
         private readonly DataContext _context;
         private readonly IMessageBrokerProducer _messageBrokerProducer;
+        private readonly ISchemaRegistry _schemaRegistry;
 
-        public TasksController(DataContext context, IMessageBrokerProducer messageBrokerProducer)
+        public TasksController(DataContext context, IMessageBrokerProducer messageBrokerProducer, ISchemaRegistry schemaRegistry)
         {
             _context = context;
             _messageBrokerProducer = messageBrokerProducer;
+            _schemaRegistry = schemaRegistry;
         }
 
         // GET: Tasks
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Tasks.Include(t => t.Account).ToListAsync());
+            return View(await _context.Tasks.Include(t => t.Account)
+                                      .ToListAsync());
         }
 
         // GET: Tasks/Details/5
@@ -35,7 +39,7 @@ namespace Tasks.Controllers
             }
 
             var task = await _context.Tasks
-                .FirstOrDefaultAsync(m => m.TaskId == id);
+                                     .FirstOrDefaultAsync(m => m.TaskId == id);
             if (task == null)
             {
                 return NotFound();
@@ -55,15 +59,35 @@ namespace Tasks.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Description")] Task task)
+        public async Task<IActionResult> Create([Bind("Description,JiraId")] Task task)
         {
             if (ModelState.IsValid)
             {
-                task.PublicId = Guid.NewGuid().ToString();
+                task.PublicId = Guid.NewGuid()
+                                    .ToString();
                 _context.Add(task);
                 await _context.SaveChangesAsync();
 
-                await _messageBrokerProducer.Produce("tasks-stream", new { task.PublicId, task.Description });
+                var data = new
+                {
+                    eventId = Guid.NewGuid()
+                                  .ToString(),
+                    eventVersion = 1,
+                    eventName = "Tasks.Stream",
+                    eventTime = DateTimeOffset.Now.ToString(),
+                    producer = "Tasks",
+                    data = new
+                    {
+                        taskId = task.PublicId,
+                        description = task.Description,
+                        jiraId = task.JiraId
+                    }
+                };
+
+                if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Stream.V1))
+                {
+                    _messageBrokerProducer.Produce("tasks-stream", data);
+                }
 
                 await AssignTask(task);
 
@@ -75,7 +99,8 @@ namespace Tasks.Controllers
 
         public async Task<IActionResult> Assign()
         {
-            var tasks = await _context.Tasks.Where(t => !t.Completed).ToArrayAsync();
+            var tasks = await _context.Tasks.Where(t => !t.Completed)
+                                      .ToArrayAsync();
 
             foreach (var task in tasks)
             {
@@ -88,17 +113,35 @@ namespace Tasks.Controllers
         private async System.Threading.Tasks.Task AssignTask(Task task)
         {
             var responsible = await _context.Accounts
-                .Where(a => a.Role != "Administrator" && a.Role != "Manager")
-                .OrderBy(a => Guid.NewGuid())
-                .Take(1)
-                .FirstOrDefaultAsync();
+                                            .Where(a => a.Role != "Administrator" && a.Role != "Manager")
+                                            .OrderBy(a => Guid.NewGuid())
+                                            .Take(1)
+                                            .FirstOrDefaultAsync();
 
             if (responsible != null)
             {
                 task.Account = responsible;
                 await _context.SaveChangesAsync();
 
-                await _messageBrokerProducer.Produce("tasks-assigned", new { task.PublicId });
+                var data = new
+                {
+                    eventId = Guid.NewGuid()
+                                  .ToString(),
+                    eventVersion = 1,
+                    eventName = "Tasks.Assigned",
+                    eventTime = DateTimeOffset.Now.ToString(),
+                    producer = "Tasks",
+                    data = new
+                    {
+                        taskId = task.PublicId,
+                        accountId = task.Account?.PublicId
+                    }
+                };
+
+                if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Assigned.V1))
+                {
+                    _messageBrokerProducer.Produce("tasks-assigned", data);
+                }
             }
         }
 
@@ -124,7 +167,7 @@ namespace Tasks.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TaskId,Description")] Task task)
+        public async Task<IActionResult> Edit(int id, [Bind("TaskId,Description,JiraId,PublicId")] Task task)
         {
             if (id != task.TaskId)
             {
@@ -135,10 +178,32 @@ namespace Tasks.Controllers
             {
                 try
                 {
-                    _context.Update(task);
+                    var dbTask = await _context.Tasks.FindAsync(id);
+                    dbTask.Description = task.Description;
+                    dbTask.JiraId = task.JiraId;
+
                     await _context.SaveChangesAsync();
 
-                    await _messageBrokerProducer.Produce("tasks-stream", new { task.TaskId, task.Description, task.Completed, task.AccountId });
+                    var data = new
+                    {
+                        eventId = Guid.NewGuid()
+                                      .ToString(),
+                        eventVersion = 1,
+                        eventName = "Tasks.Stream",
+                        eventTime = DateTimeOffset.Now.ToString(),
+                        producer = "Tasks",
+                        data = new
+                        {
+                            taskId = dbTask.PublicId,
+                            description = dbTask.Description,
+                            jiraId = dbTask.JiraId
+                        }
+                    };
+
+                    if (_schemaRegistry.Validate(data, SchemaRegistry.Schemas.Tasks.Stream.V1))
+                    {
+                        _messageBrokerProducer.Produce("tasks-stream", data);
+                    }
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -167,7 +232,7 @@ namespace Tasks.Controllers
             }
 
             var task = await _context.Tasks
-                .FirstOrDefaultAsync(m => m.TaskId == id);
+                                     .FirstOrDefaultAsync(m => m.TaskId == id);
             if (task == null)
             {
                 return NotFound();
