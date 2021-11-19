@@ -1,11 +1,12 @@
 using Common.MessageBroker;
+using Common.SchemaRegistry;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Tasks.MessageBroker;
 
 namespace Tasks
@@ -25,11 +26,13 @@ namespace Tasks
             services.AddDbContext<Context.DataContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options => { options.LoginPath = "/Login"; });
+                    .AddCookie(options => { options.LoginPath = "/Login"; });
 
             services.AddControllersWithViews();
 
-            services.AddSingleton<IMessageBrokerConsumer, Consumer>(x => new Consumer(x));
+            var schemaRegistry = new SchemaRegistry();
+            services.AddSingleton<ISchemaRegistry>(schemaRegistry);
+            services.AddSingleton<IMessageBrokerConsumer, Consumer>(x => new Consumer(x, schemaRegistry));
             services.AddScoped<IMessageBrokerProducer, Producer>();
         }
 

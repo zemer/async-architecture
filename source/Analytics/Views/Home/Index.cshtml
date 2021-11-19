@@ -1,0 +1,11 @@
+﻿@model HomeModel
+
+@{
+    ViewData["Title"] = "Analytics";
+}
+
+<p>How much top management earned today: @(Model.Bill)$</p>
+<p>How many parrots went negative: @(Model.NegativeParrots)</p>
+<p>Most expensive day task: @(Model.MostExpensiveDayTask)</p>
+<p>Most expensive week task: @(Model.MostExpensiveWeekTask)</p>
+<p>Most expensive month task: @(Model.MostExpensiveMonthTask)</p>
