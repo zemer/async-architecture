@@ -6,7 +6,7 @@ Data - ID, Name, Role, Deleted, DateCreated, DateCompleted
 Event - Task CUD
 Producer - Tasks
 Cosumer - Accounting, Analitics
-Data - ID, Description, Status, Cost, Responsible
+Data - ID, Description, JiraId, Status, Cost, Responsible
 
 Event - Bill CUD
 Producer - Accounting

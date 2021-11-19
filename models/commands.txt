@@ -21,15 +21,6 @@ Command - Complete task
 Data - Task
 Event - Tasks.Completed
 
-Аккаунтинг: кто сколько денег заработал
-
-цены на задачу определяется единоразово, в момент появления в системе (можно с минимальной задержкой)
-
-Actor - Tasks.Created event
-Command - Rate task
-Data - Task
-Event - Tasks.Rated
-
 деньги списываются сразу после ассайна на сотрудника, а начисляются после выполнения задачи.
 
 Actor - Tasks.Asssigned event
